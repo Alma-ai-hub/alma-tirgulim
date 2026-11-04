@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>מילה במילה</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body data-tab="sheets">
+  <header class="app-head">
+    <div class="logo">✏️</div>
+    <div>
+      <h1>מילה במילה</h1>
+      <p>מכניסים מילים, ומקבלים 10 דפי עבודה ומשחקים לתרגול</p>
+    </div>
+  </header>
+
+  <main>
+    <section class="panel-box form">
+      <label class="label" for="words">המילים לתרגול</label>
+      <p class="help">מילה אחת בכל שורה (או מופרדות בפסיקים). אפשר בעברית, באנגלית, או גם וגם.</p>
+      <textarea id="words" rows="9" placeholder="שולחן&#10;מחברת&#10;window&#10;..."></textarea>
+      <div class="form-row">
+        <span id="word-count" class="count">0 מילים</span>
+        <button class="link" id="sample" type="button">לנסות עם רשימה לדוגמה</button>
+      </div>
+
+      <label class="label" for="list-title">כותרת לדפים (לא חובה)</label>
+      <input id="list-title" type="text" placeholder="לדוגמה: מילים לשבוע 5">
+
+      <label class="check-label"><input type="checkbox" id="with-answers"> להוסיף דף פתרונות למבוגרים</label>
+
+      <p id="form-error" class="error" role="alert"></p>
+      <button class="btn primary big" id="create" type="button">יוצרים דפים ומשחקים ✨</button>
+    </section>
+
+    <section id="results" hidden>
+      <nav class="tabs" role="tablist">
+        <button class="tab active" data-tab="sheets" role="tab">🖨️ דפי עבודה</button>
+        <button class="tab" data-tab="games" role="tab">🎮 משחקים במחשב</button>
+      </nav>
+
+      <div id="panel-sheets" class="panel">
+        <div class="toolbar">
+          <button class="btn primary" id="print">הדפסה / שמירה כ-PDF</button>
+          <button class="btn ghost" id="remake">לערבב מחדש 🔀</button>
+          <span class="help">"לערבב מחדש" בונה את התפזורות והאותיות החסרות מההתחלה.</span>
+        </div>
+        <div id="sheets" class="sheets"></div>
+      </div>
+
+      <div id="panel-games" class="panel" hidden>
+        <div id="game-area"></div>
+      </div>
+    </section>
+  </main>
+
+  <script src="js/words.js"></script>
+  <script src="js/sheets.js"></script>
+  <script src="js/games.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
