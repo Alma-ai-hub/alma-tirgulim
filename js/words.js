@@ -55,8 +55,95 @@ function normalize(word) {
   return gridLetters(word).join("");
 }
 
+// All randomness goes through rand(). While a test is being built it uses a seeded
+// generator, so a saved test (words + seed) always rebuilds exactly the same pages.
+let rand = Math.random;
+
+function seededRandom(seed) {
+  let a = seed >>> 0; // "mulberry32", a small well-known generator
+  return function () {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function withSeed(seed, fn) {
+  const old = rand;
+  rand = seededRandom(seed);
+  try {
+    return fn();
+  } finally {
+    rand = old;
+  }
+}
+
+function newSeed() {
+  return Math.floor(Math.random() * 2147483647);
+}
+
 function randInt(n) {
-  return Math.floor(Math.random() * n);
+  return Math.floor(rand() * n);
+}
+
+// Hebrew final letters (ך ם ן ף ץ) belong only at the end of a word.
+const FINALS = { "כ": "ך", "מ": "ם", "נ": "ן", "פ": "ף", "צ": "ץ" };
+const UNFINAL = { "ך": "כ", "ם": "מ", "ן": "נ", "ף": "פ", "ץ": "צ" };
+
+function fixFinals(letters) {
+  return letters.map((ch, i) => {
+    const atEnd = i === letters.length - 1 || !/\p{L}/u.test(letters[i + 1]);
+    return atEnd ? FINALS[ch] || ch : UNFINAL[ch] || ch;
+  });
+}
+
+// Letters that children often mix up.
+const CONFUSABLE = {
+  he: [["ט", "ת"], ["כ", "ח", "ק"], ["ס", "ש"], ["א", "ע", "ה"], ["ב", "ו"]],
+  en: [["c", "k", "s"], ["i", "e", "y"], ["a", "e", "u"], ["m", "n"], ["b", "d"], ["o", "u"]],
+};
+
+function confusable(ch, he) {
+  const lower = he ? UNFINAL[ch] || ch : ch.toLowerCase();
+  const group = CONFUSABLE[he ? "he" : "en"].find((g) => g.includes(lower));
+  if (!group) return null;
+  const others = group.filter((c) => c !== lower);
+  const sub = others[randInt(others.length)];
+  return !he && ch !== lower ? sub.toUpperCase() : sub;
+}
+
+// Wrong spellings of a word that look believable (swapped, missing, mixed-up or extra letter).
+function misspellings(word, count) {
+  const he = isHebrew(word);
+  const base = Array.from(plain(word));
+  const correct = normalize(word);
+  const found = new Set();
+  for (let t = 0; t < 80 && found.size < count; t++) {
+    let a = base.slice();
+    const spots = a.map((c, i) => i).filter((i) => /\p{L}/u.test(a[i]));
+    const i = spots[randInt(spots.length)];
+    const kind = randInt(4);
+    if (kind === 0) {
+      if (!/\p{L}/u.test(a[i + 1] || "")) continue;
+      [a[i], a[i + 1]] = [a[i + 1], a[i]];
+    } else if (kind === 1) {
+      if (spots.length < 4) continue;
+      a.splice(i, 1);
+    } else if (kind === 2) {
+      const sub = confusable(a[i], he);
+      if (!sub) continue;
+      a[i] = sub;
+    } else {
+      if (i === 0) continue;
+      a.splice(i, 0, he ? (randInt(2) ? "ו" : "י") : a[i - 1]);
+    }
+    if (he) a = fixFinals(a);
+    const s = a.join("");
+    if (normalize(s) !== correct) found.add(s);
+  }
+  return [...found];
 }
 
 function shuffle(list) {

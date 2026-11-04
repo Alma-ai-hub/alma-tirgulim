@@ -60,7 +60,7 @@ function memoryGame(board) {
   let pairs = 0;
   board.innerHTML = `<div class="mem-grid">${cards.map((w, i) => `
     <button class="mem-card" data-i="${i}" aria-label="קלף ${i + 1}">
-      <span class="mem-back">?</span><span class="mem-front">${wordSpan(w)}</span>
+      <span class="mem-back"></span><span class="mem-front">${wordSpan(w)}</span>
     </button>`).join("")}</div>`;
   setScore("ניסיונות: 0");
 

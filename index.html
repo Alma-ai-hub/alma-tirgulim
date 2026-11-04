@@ -3,63 +3,75 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>מילה במילה</title>
+  <title>עלמה תירגולים</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Rubik:wght@400;500;700&display=swap">
   <link rel="stylesheet" href="style.css">
 </head>
-<body data-tab="sheets">
+<body>
+  <div class="sparkles" aria-hidden="true"><span>✦</span><span>✧</span><span>♡</span><span>✦</span><span>✧</span><span>★</span><span>✦</span><span>♡</span></div>
+
   <header class="app-head">
-    <div class="logo">✏️</div>
-    <div>
-      <h1>מילה במילה</h1>
-      <p>מכניסים מילים, ומקבלים 10 דפי עבודה ומשחקים לתרגול</p>
-    </div>
+    <div class="tagline">✦ ALMA · PRACTICE · ✦</div>
+    <h1>עלמה תירגולים</h1>
+    <p>מכניסים מילים ומקבלים 10 דפי עבודה ומשחקים. בכל פעם דפים אחרים!</p>
+    <nav class="views">
+      <button class="view-btn active" data-view="create">✨ מבדק חדש</button>
+      <button class="view-btn" data-view="saved">♡ המבדקים שלי <span class="badge" id="saved-count">0</span></button>
+    </nav>
   </header>
 
   <main>
-    <section class="panel-box form">
-      <label class="label" for="words">המילים לתרגול</label>
-      <p class="help">מילה אחת בכל שורה (או מופרדות בפסיקים). אפשר בעברית, באנגלית, או גם וגם.</p>
-      <textarea id="words" rows="9" placeholder="שולחן&#10;מחברת&#10;window&#10;..."></textarea>
-      <div class="form-row">
-        <span id="word-count" class="count">0 מילים</span>
-        <button class="link" id="sample" type="button">לנסות עם רשימה לדוגמה</button>
-      </div>
+    <div id="view-create">
+      <section class="panel-box form">
+        <label class="label" for="test-name">שם המבדק</label>
+        <input id="test-name" type="text" placeholder="לדוגמה: מבדק אנגלית - שבוע 5">
 
-      <label class="label" for="list-title">כותרת לדפים (לא חובה)</label>
-      <input id="list-title" type="text" placeholder="לדוגמה: מילים לשבוע 5">
-
-      <label class="check-label"><input type="checkbox" id="with-answers"> להוסיף דף פתרונות למבוגרים</label>
-
-      <p id="form-error" class="error" role="alert"></p>
-      <button class="btn primary big" id="create" type="button">יוצרים דפים ומשחקים ✨</button>
-    </section>
-
-    <section id="results" hidden>
-      <nav class="tabs" role="tablist">
-        <button class="tab active" data-tab="sheets" role="tab">🖨️ דפי עבודה</button>
-        <button class="tab" data-tab="games" role="tab">🎮 משחקים במחשב</button>
-      </nav>
-
-      <div id="panel-sheets" class="panel">
-        <div class="toolbar">
-          <button class="btn primary" id="print">הדפסה / שמירה כ-PDF</button>
-          <button class="btn ghost" id="remake">לערבב מחדש 🔀</button>
-          <span class="help">"לערבב מחדש" בונה את התפזורות והאותיות החסרות מההתחלה.</span>
+        <label class="label" for="words">המילים לתרגול</label>
+        <p class="help">מילה אחת בכל שורה (או מופרדות בפסיקים). אפשר בעברית, באנגלית, או גם וגם.</p>
+        <textarea id="words" rows="9" placeholder="שולחן&#10;מחברת&#10;window&#10;..."></textarea>
+        <div class="form-row">
+          <span id="word-count" class="count">0 מילים</span>
+          <button class="link" id="sample" type="button">לנסות עם רשימה לדוגמה</button>
         </div>
-        <div id="sheets" class="sheets"></div>
-      </div>
 
-      <div id="panel-games" class="panel" hidden>
-        <div id="game-area"></div>
-      </div>
-    </section>
+        <label class="check-label"><input type="checkbox" id="with-answers"> להוסיף דף פתרונות למבוגרים</label>
+
+        <p id="form-error" class="error" role="alert"></p>
+        <button class="btn primary big" id="create" type="button">יוצרים מבדק ✨</button>
+      </section>
+
+      <section id="results" hidden>
+        <nav class="tabs" role="tablist">
+          <button class="tab active" data-tab="sheets" role="tab">🖨️ דפי עבודה</button>
+          <button class="tab" data-tab="games" role="tab">🎮 משחקים במחשב</button>
+        </nav>
+
+        <div id="panel-sheets" class="panel">
+          <div class="toolbar">
+            <button class="btn primary" id="save">♡ שמירה במבדקים שלי</button>
+            <button class="btn ghost" id="print">🖨️ הדפסה / PDF</button>
+            <button class="btn ghost" id="remake">🔀 דפים אחרים</button>
+            <span class="help" id="save-status"></span>
+          </div>
+          <div id="sheets" class="sheets"></div>
+        </div>
+
+        <div id="panel-games" class="panel" hidden>
+          <div id="game-area"></div>
+        </div>
+      </section>
+    </div>
+
+    <div id="view-saved" hidden>
+      <div id="saved-list" class="saved-list"></div>
+    </div>
   </main>
 
   <script src="js/words.js"></script>
   <script src="js/sheets.js"></script>
   <script src="js/games.js"></script>
+  <script src="js/store.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
