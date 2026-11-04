@@ -116,7 +116,7 @@ function renderSaved() {
   if (!tests.length) {
     els.savedList.innerHTML = `
       <div class="empty-state">
-        <div class="empty-icon">♡</div>
+        ${sticker("bun", "empty-art")}
         <p>עוד אין מבדקים שמורים.</p>
         <p class="help">יוצרים מבדק, ולוחצים "שמירה במבדקים שלי".</p>
       </div>`;
@@ -175,5 +175,6 @@ els.save.addEventListener("click", save);
 document.querySelectorAll(".tab").forEach((t) => t.addEventListener("click", () => showTab(t.dataset.tab)));
 document.querySelectorAll(".view-btn").forEach((b) => b.addEventListener("click", () => showView(b.dataset.view)));
 
+document.getElementById("hero-stickers").innerHTML = ["mic", "ball", "notes", "bun", "lightstick", "strawberry"].map((name) => sticker(name, "")).join("");
 loadDraft();
 renderSaved();

@@ -83,31 +83,50 @@ function buildSheets(test) {
       });
     }
 
-    return pages.map((p, i) => sheetHtml(test.name, p, i + 1, chosen.length)).join("");
+    // Decorations use their own random numbers, so they never change the content of a saved test.
+    const deco = seededRandom(test.seed ^ 0x5bd1e995);
+    const pick = (list) => list[Math.floor(deco() * list.length)];
+    const themes = THEMES.map((t) => [deco(), t]).sort((a, b) => a[0] - b[0]).map((pair) => pair[1]);
+    return pages.map((p, i) => {
+      const theme = themes[i % themes.length];
+      return sheetHtml(test.name, p, i + 1, chosen.length, { theme, mascot: pick(SQUISHIES), cheer: pick(theme.cheers) });
+    }).join("");
   });
 }
 
-function sheetHtml(name, page, n, total) {
+function sheetHtml(name, page, n, total, look) {
+  const [a, b] = look.theme.stickers;
   return `
-    <section class="sheet">
+    <section class="sheet theme-${look.theme.id}">
+      <div class="sheet-bg">${sticker(b, "bg-sticker")}</div>
       <header class="sheet-head">
-        <div class="sheet-brand">✦ עלמה תירגולים ✦</div>
-        <h2 class="sheet-test">${escapeHtml(name)}</h2>
+        <div class="head-band">
+          ${sticker(a, "head-sticker s1")}
+          <div class="head-text">
+            <div class="sheet-brand">✦ עלמה תירגולים ✦</div>
+            <h2 class="sheet-test">${escapeHtml(name)}</h2>
+          </div>
+          ${sticker(b, "head-sticker s2")}
+        </div>
         <div class="sheet-sub">
-          <span class="sheet-pill">${page.isAnswers ? "" : `${n} · `}${escapeHtml(page.title)}</span>
+          <span class="sheet-pill">${page.isAnswers ? "" : `<b>${n}</b>`}${escapeHtml(page.title)}</span>
           <span class="sheet-name">שם: <span class="blank"></span> &nbsp; תאריך: <span class="blank short"></span></span>
         </div>
       </header>
-      <p class="sheet-instr">${page.instr}</p>
+      <div class="sheet-instr">${sticker(look.mascot, "mascot")}<p class="bubble">${page.instr}</p></div>
       <div class="sheet-body">${page.body}</div>
-      <footer class="sheet-foot">${page.isAnswers ? "♡ פתרונות ♡" : `♡ דף ${n} מתוך ${total} ♡`}</footer>
+      <footer class="sheet-foot">
+        <span class="cheer">${page.isAnswers ? "♡ פתרונות ♡" : escapeHtml(look.cheer)}</span>
+        <span>${page.isAnswers ? "" : `♡ דף ${n} מתוך ${total} ♡`}</span>
+        <span class="rating">${page.isAnswers ? "" : "איך היה? ☆ ☆ ☆"}</span>
+      </footer>
     </section>`;
 }
 
 // ---------- Writing ----------
 
 function dictationSheet({ words }) {
-  const lines = words.map((w, i) => `<div class="order-line"><span class="num">${i + 1}.</span><span class="write-line"></span></div>`);
+  const lines = words.map((w, i) => `<div class="order-line"><span class="num">${i + 1}</span><span class="write-line"></span></div>`);
   const list = shuffle(words).map((w, i) => `<span>${i + 1}. ${wordSpan(w)}</span>`);
   return `
     <div class="order-blocks two-col">${lines.join("")}</div>
@@ -137,7 +156,7 @@ function pyramidSheet({ words }) {
   const fit = words.filter((w) => gridLetters(w).length >= 3 && gridLetters(w).length <= 8);
   const pick = shuffle(fit.length >= 2 ? fit : words).slice(0, 6);
   const longest = Math.max(...pick.map((w) => gridLetters(w).length));
-  const box = Math.min(7, 64 / longest);
+  const box = Math.min(7, 64 / longest, 56 / (longest + 1.5)); // 3 rows of towers must fit on the page
   const blocks = pick.map((w) => {
     const n = gridLetters(w).length;
     const lang = langOf(w);
@@ -165,7 +184,7 @@ function shapesSheet({ words }) {
       if (first) { first = false; return `<span class="box">${escapeHtml(ch)}</span>`; }
       return `<span class="box"></span>`;
     });
-    return `<div class="shape-row"><span class="num">${n + 1}.</span>${boxesSpan(w, boxes)}</div>`;
+    return `<div class="shape-row"><span class="num">${n + 1}</span>${boxesSpan(w, boxes)}</div>`;
   });
   return wordBank(words) + `<div class="rows two-col" style="${fitBox(words)}">${rows.join("")}</div>`;
 }
@@ -191,7 +210,7 @@ function searchAnswer(search) {
 function gridTable(puzzle, showAnswers, small) {
   const marked = new Set();
   if (showAnswers) puzzle.placed.forEach((p) => p.cells.forEach(([x, y]) => marked.add(`${x},${y}`)));
-  const cellMm = Math.min(small ? 6 : 12, (small ? 78 : 172) / puzzle.size);
+  const cellMm = Math.min(small ? 6 : 12, (small ? 78 : 152) / puzzle.size);
   const rows = puzzle.grid.map((row, y) =>
     `<tr>${row.map((ch, x) => `<td class="${marked.has(`${x},${y}`) ? "hit" : ""}">${escapeHtml(ch)}</td>`).join("")}</tr>`);
   return `<table class="grid" dir="ltr" style="--cell:${cellMm.toFixed(2)}mm">${rows.join("")}</table>`;
@@ -279,7 +298,7 @@ function crosswordSheet(ctx) {
   const cw = ctx.crossword;
   if (!cw) return `<p class="note">צריך לפחות שתי מילים כדי לבנות תשבץ.</p>`;
   const bank = `<div class="bank"><span class="bank-label">מחסן מילים:</span>${shuffle(cw.placed).map((p) => wordSpan(p.word, "w bank-word")).join("")}</div>`;
-  return bank + crosswordTable(cw, false, 180, 170);
+  return bank + crosswordTable(cw, false, 180, 160);
 }
 
 function crosswordAnswer(ctx) {
@@ -305,7 +324,7 @@ function brokenSheet({ words }) {
   });
   const starts = parts.map((p) => `<div class="connect-item">${halfSpan(p.word, p.start, false)}<span class="dot"></span></div>`);
   const ends = shuffle(parts).map((p) => `<div class="connect-item"><span class="dot"></span>${halfSpan(p.word, p.end, true)}</div>`);
-  const lines = parts.map((p, i) => `<div class="order-line"><span class="num">${i + 1}.</span><span class="write-line"></span></div>`);
+  const lines = parts.map((p, i) => `<div class="order-line"><span class="num">${i + 1}</span><span class="write-line"></span></div>`);
   return `
     <div class="connect broken"><div class="connect-col">${starts.join("")}</div><div class="connect-col far">${ends.join("")}</div></div>
     <div class="order-label">המילים המלאות:</div>
@@ -335,7 +354,7 @@ function tiles(word, letters) {
 function scrambleSheet(ctx) {
   ctx.scrambleOrder = shuffle(ctx.words);
   const rows = ctx.scrambleOrder.map((w, n) => `
-    <div class="scramble-row"><span class="num">${n + 1}.</span><span class="scramble-main">${tiles(w, scrambled(w))}<span class="write-line"></span></span></div>`);
+    <div class="scramble-row"><span class="num">${n + 1}</span><span class="scramble-main">${tiles(w, scrambled(w))}<span class="write-line"></span></span></div>`);
   return `<div class="rows two-col tall" style="${fitBox(ctx.words)}">${rows.join("")}</div>`;
 }
 
@@ -363,7 +382,7 @@ function hiddenSheet({ words }) {
       const end = before.length + gridLetters(w).length - 1;
       line[end] = gridLetters(w).slice(-1)[0];
     }
-    return `<div class="hidden-row"><span class="num">${n + 1}.</span><span class="hidden-letters" dir="${he ? "rtl" : "ltr"}">${line.map((ch) => `<span>${escapeHtml(ch)}</span>`).join("")}</span></div>`;
+    return `<div class="hidden-row"><span class="num">${n + 1}</span><span class="hidden-letters" dir="${he ? "rtl" : "ltr"}">${line.map((ch) => `<span>${escapeHtml(ch)}</span>`).join("")}</span></div>`;
   });
   return `<div class="rows">${rows.join("")}</div>`;
 }
@@ -377,7 +396,7 @@ function codeSheet({ words }) {
   const items = pick.map((w, n) => {
     const lang = langOf(w);
     const cells = gridLetters(w).map((ch) => `<span class="code-cell"><span class="code-num">${code.get(ch)}</span><span class="box"></span></span>`);
-    return `<div class="code-word"><span class="num">${n + 1}.</span><span class="code-cells" dir="${lang === "he" ? "rtl" : "ltr"}">${cells.join("")}</span></div>`;
+    return `<div class="code-word"><span class="num">${n + 1}</span><span class="code-cells" dir="${lang === "he" ? "rtl" : "ltr"}">${cells.join("")}</span></div>`;
   });
   return `<div class="code-key"><span class="bank-label">המפתח:</span>${key.join("")}</div><div class="rows two-col tall" style="${fitBox(pick)}">${items.join("")}</div>`;
 }
@@ -394,14 +413,14 @@ function missingSheet({ words }, hard) {
       if (!/\p{L}/u.test(ch)) return `<span class="gap"></span>`;
       return hidden.has(i) ? `<span class="box empty"></span>` : `<span class="box">${escapeHtml(ch)}</span>`;
     });
-    return `<div class="shape-row"><span class="num">${n + 1}.</span>${boxesSpan(w, boxes)}</div>`;
+    return `<div class="shape-row"><span class="num">${n + 1}</span>${boxesSpan(w, boxes)}</div>`;
   });
   return (hard ? "" : wordBank(words)) + `<div class="rows two-col" style="${fitBox(words)}">${rows.join("")}</div>`;
 }
 
 function fixSheet(ctx) {
   ctx.fixOrder = shuffle(ctx.words).map((w) => ({ word: w, wrong: misspellings(w, 1)[0] })).filter((p) => p.wrong);
-  const rows = ctx.fixOrder.map((p, n) => `<div class="fix-row"><span class="num">${n + 1}.</span><span class="fix-wrong">${wordSpan(p.wrong)}</span><span class="write-line"></span></div>`);
+  const rows = ctx.fixOrder.map((p, n) => `<div class="fix-row"><span class="num">${n + 1}</span><span class="fix-wrong">${wordSpan(p.wrong)}</span><span class="write-line"></span></div>`);
   return `<div class="rows two-col">${rows.join("")}</div>`;
 }
 
@@ -412,7 +431,7 @@ function fixAnswer(ctx) {
 function spellingSheet({ words }) {
   const rows = shuffle(words).map((w, n) => {
     const options = shuffle([plain(w)].concat(misspellings(w, 2)));
-    return `<div class="spell-row"><span class="num">${n + 1}.</span>${options.map((o) => wordSpan(o, "w spell-option")).join("")}</div>`;
+    return `<div class="spell-row"><span class="num">${n + 1}</span>${options.map((o) => wordSpan(o, "w spell-option")).join("")}</div>`;
   });
   return `<div class="rows ${words.length > 14 ? "dense" : ""}">${rows.join("")}</div>`;
 }
@@ -427,7 +446,7 @@ function orderInstr({ mixed, he }) {
 function orderSheet({ words, mixed, he, en }) {
   const groups = mixed ? [he, en] : [words];
   const blocks = groups.map((group) => {
-    const lines = group.map((w, i) => `<div class="order-line"><span class="num">${i + 1}.</span><span class="write-line"></span></div>`);
+    const lines = group.map((w, i) => `<div class="order-line"><span class="num">${i + 1}</span><span class="write-line"></span></div>`);
     return `<div class="order-block">${groups.length > 1 ? `<div class="order-label">${isHebrew(group[0]) ? "עברית" : "English"}</div>` : ""}${lines.join("")}</div>`;
   });
   return wordBank(words) + `<div class="order-blocks ${groups.length > 1 ? "split" : "two-col"}">${blocks.join("")}</div>`;
@@ -481,18 +500,19 @@ function storySheet({ words }) {
 function memorySheet({ words }) {
   const cards = shuffle(words.concat(words));
   const cols = cards.length > 30 ? 5 : 4;
-  return `<div class="cards" style="--cols:${cols}">${cards.map((w) => `<div class="card">${wordSpan(w)}</div>`).join("")}</div>`;
+  const art = Object.keys(STICKERS);
+  return `<div class="cards" style="--cols:${cols}">${cards.map((w, i) => `<div class="card">${sticker(art[i % art.length], "card-sticker")}<span style="font-size:${Math.min(6, 60 / graphemes(w).length).toFixed(1)}mm">${wordSpan(w)}</span></div>`).join("")}</div>`;
 }
 
 function boardSheet({ words }) {
   const cols = 6, rows = 6;
   const total = cols * rows;
-  const specials = { 6: "⭐ קדימה 2", 13: "↩ חזרה 1", 19: "⭐ קדימה 3", 26: "↩ חזרה 2", 31: "🎁 עוד תור" };
+  const specials = { 6: "קדימה 2", 13: "↩ חזרה 1", 19: "קדימה 3", 26: "↩ חזרה 2", 31: "עוד תור!" };
   let pool = [];
   const squares = Array.from({ length: total }, (_, i) => {
-    if (i === 0) return "<b>התחלה</b>";
-    if (i === total - 1) return "<b>★ סיום ★</b>";
-    if (specials[i]) return `<span class="board-special">${specials[i]}</span>`;
+    if (i === 0) return `${sticker("sneaker", "board-sticker")}<b>התחלה</b>`;
+    if (i === total - 1) return `${sticker("trophy", "board-sticker")}<b>סיום!</b>`;
+    if (specials[i]) return `${sticker(specials[i].startsWith("↩") ? "ball" : "star", "board-sticker")}<span class="board-special">${specials[i]}</span>`;
     if (!pool.length) pool = shuffle(words);
     return wordSpan(pool.pop());
   });
@@ -510,7 +530,7 @@ function boardSheet({ words }) {
 function tictacSheet({ words }) {
   const board = (k) => `
     <div class="bingo">
-      <div class="bingo-title">✕ ◯ <small>לוח ${k}</small></div>
+      <div class="bingo-title">${sticker("ball", "title-sticker")} ✕ ◯ <small>לוח ${k}</small> ${sticker("medal", "title-sticker")}</div>
       <div class="bingo-grid" style="--n:3">${shuffle(words).slice(0, 9).map((w) => `<div class="bingo-cell">${wordSpan(w)}</div>`).join("")}</div>
     </div>`;
   return `<div class="bingos">${board(1)}<div class="cut-line">✂</div>${board(2)}</div>`;
@@ -520,7 +540,7 @@ function bingoSheet({ words }) {
   const n = words.length >= 16 ? 4 : words.length >= 9 ? 3 : 2;
   const board = (k) => `
     <div class="bingo">
-      <div class="bingo-title">✦ בינגו! ✦ <small>לוח ${k}</small></div>
+      <div class="bingo-title">${sticker("lightstick", "title-sticker")} בינגו! <small>לוח ${k}</small> ${sticker("mic", "title-sticker")}</div>
       <div class="bingo-grid" style="--n:${n}">${shuffle(words).slice(0, n * n).map((w) => `<div class="bingo-cell">${wordSpan(w)}</div>`).join("")}</div>
     </div>`;
   return `<div class="bingos">${board(1)}<div class="cut-line">✂</div>${board(2)}</div>`;

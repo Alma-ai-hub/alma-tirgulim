@@ -1,14 +1,14 @@
 // On-screen games. Each game draws itself inside #game-area.
 
 const GAMES = [
-  { id: "memory", icon: "🃏", title: "משחק זיכרון", text: "הפכו קלפים ומצאו זוגות של אותה מילה." },
-  { id: "search", icon: "🔍", title: "תפזורת", text: "לחצו על האות הראשונה ועל האחרונה של כל מילה." },
-  { id: "missing", icon: "🧩", title: "אותיות חסרות", text: "השלימו את האותיות שהלכו לאיבוד." },
-  { id: "flash", icon: "⚡", title: "תראו ותכתבו", text: "המילה מופיעה לרגע ונעלמת. כתבו אותה מהזיכרון!" },
-  { id: "scramble", icon: "🔀", title: "אותיות מבולבלות", text: "לחצו על האותיות לפי הסדר כדי לבנות את המילה." },
-  { id: "spelling", icon: "✅", title: "מי כתוב נכון?", text: "שלוש מילים, רק אחת כתובה נכון. מצאו אותה!" },
-  { id: "balloons", icon: "🎈", title: "הצילו את הבלונים", text: "נחשו את המילה אות אחרי אות, לפני שכל הבלונים מתפוצצים." },
-  { id: "race", icon: "⏱️", title: "מירוץ הקלדה", text: "כמה מילים תספיקו להקליד נכון בדקה אחת?" },
+  { id: "memory", art: "lightstick", tag: "K-POP", title: "משחק זיכרון", text: "הפכו קלפים ומצאו זוגות של אותה מילה." },
+  { id: "search", art: "star", tag: "STUDY", title: "תפזורת", text: "לחצו על האות הראשונה ועל האחרונה של כל מילה." },
+  { id: "missing", art: "bun", tag: "SQUISHY", title: "אותיות חסרות", text: "השלימו את האותיות שהלכו לאיבוד." },
+  { id: "flash", art: "mic", tag: "ON STAGE", title: "תראו ותכתבו", text: "המילה מופיעה לרגע ונעלמת. כתבו אותה מהזיכרון!" },
+  { id: "scramble", art: "notes", tag: "DANCE", title: "אותיות מבולבלות", text: "לחצו על האותיות לפי הסדר כדי לבנות את המילה." },
+  { id: "spelling", art: "pencil", tag: "STUDY", title: "מי כתוב נכון?", text: "שלוש מילים, רק אחת כתובה נכון. מצאו אותה!" },
+  { id: "balloons", art: "balloon", tag: "PARTY", title: "הצילו את הבלונים", text: "נחשו את המילה אות אחרי אות, לפני שכל הבלונים מתפוצצים." },
+  { id: "race", art: "ball", tag: "SOCCER", title: "מירוץ הקלדה", text: "כמה מילים תספיקו להקליד נכון בדקה אחת?" },
 ];
 
 let gameWords = [];
@@ -18,7 +18,7 @@ function showGameMenu(words) {
   const area = document.getElementById("game-area");
   area.innerHTML = `<div class="game-menu">${GAMES.map((g) => `
     <button class="game-card" data-game="${g.id}">
-      <span class="game-icon">${g.icon}</span>
+      <span class="game-card-top">${sticker(g.art, "game-art")}<span class="game-tag">${g.tag}</span></span>
       <span class="game-title">${g.title}</span>
       <span class="game-text">${g.text}</span>
     </button>`).join("")}</div>`;
@@ -31,7 +31,7 @@ function startGame(id) {
   area.innerHTML = `
     <div class="game-top">
       <button class="btn ghost" id="game-back">→ לכל המשחקים</button>
-      <h3>${game.icon} ${game.title}</h3>
+      <h3>${sticker(game.art, "h3-art")} ${game.title}</h3>
       <span class="game-score" id="game-score"></span>
     </div>
     <div id="game-board"></div>`;
@@ -44,14 +44,52 @@ function setScore(text) {
   document.getElementById("game-score").textContent = text;
 }
 
+const CHEERS = ["את כוכבת! ✦", "גווווול! ⚽", "מדליית זהב! 🥇", "ריקוד ניצחון! ♪", "סקווישי ומנצחת! ♡", "מוח של אלופה! ✎"];
+
 function finish(board, message, again) {
   board.innerHTML = `
     <div class="finish">
-      <div class="finish-icon">🏆</div>
+      ${sticker("trophy", "finish-art")}
+      <div class="finish-cheer">${CHEERS[Math.floor(Math.random() * CHEERS.length)]}</div>
       <p>${message}</p>
       <button class="btn primary" id="again">עוד פעם!</button>
     </div>`;
   document.getElementById("again").addEventListener("click", again);
+  confetti(60);
+}
+
+// Little hearts and stars that fly out of an element when the player gets it right.
+function celebrate(el, count = 14) {
+  if (!el) return;
+  const box = el.getBoundingClientRect();
+  burst(box.left + box.width / 2, box.top + box.height / 2, count, 120);
+}
+
+// A big shower of confetti from the top of the screen, for the end of a game.
+function confetti(count) {
+  for (let i = 0; i < count; i++) {
+    setTimeout(() => burst(Math.random() * window.innerWidth, -20, 1, 0, true), i * 25);
+  }
+}
+
+function burst(x, y, count, spread, falling) {
+  const shapes = ["♥", "✦", "★", "♪", "●"];
+  const colors = ["#ff3d9a", "#ff7cc3", "#ffc2e0", "#ffffff"];
+  for (let i = 0; i < count; i++) {
+    const p = document.createElement("span");
+    p.className = falling ? "confetti fall" : "confetti";
+    p.textContent = shapes[i % shapes.length];
+    const angle = Math.random() * Math.PI * 2;
+    const dist = spread * (0.5 + Math.random());
+    p.style.left = `${x}px`;
+    p.style.top = `${y}px`;
+    p.style.color = colors[Math.floor(Math.random() * colors.length)];
+    p.style.setProperty("--dx", `${falling ? (Math.random() - 0.5) * 160 : Math.cos(angle) * dist}px`);
+    p.style.setProperty("--dy", `${falling ? window.innerHeight + 40 : Math.sin(angle) * dist}px`);
+    p.style.fontSize = `${14 + Math.random() * 14}px`;
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), falling ? 2600 : 900);
+  }
 }
 
 // --- Memory -------------------------------------------------------------
@@ -64,7 +102,7 @@ function memoryGame(board) {
   let pairs = 0;
   board.innerHTML = `<div class="mem-grid">${cards.map((w, i) => `
     <button class="mem-card" data-i="${i}" aria-label="קלף ${i + 1}">
-      <span class="mem-back"></span><span class="mem-front">${wordSpan(w)}</span>
+      <span class="mem-back">${sticker("lightstick", "mem-art")}</span><span class="mem-front">${wordSpan(w)}</span>
     </button>`).join("")}</div>`;
   setScore("ניסיונות: 0");
 
@@ -78,6 +116,7 @@ function memoryGame(board) {
     const [a, b] = open;
     if (cards[a.dataset.i] === cards[b.dataset.i]) {
       a.classList.add("matched");
+      celebrate(b);
       b.classList.add("matched");
       open = [];
       pairs++;
@@ -147,6 +186,7 @@ function searchGame(board, lang) {
       return;
     }
     found.add(hit);
+    celebrate(btn);
     line.forEach(([cx, cy]) => cell(cx, cy).classList.add("found", `c${hit % 6}`));
     board.querySelector(`.play-list li[data-i="${hit}"]`).classList.add("done");
     setScore(`נמצאו ${found.size} מתוך ${puzzle.placed.length}`);
@@ -232,6 +272,7 @@ function missingGame(board) {
       if (ok) {
         if (firstTry) right++;
         feedback.innerHTML = `<span class="good">מעולה! ✓</span> ${wordSpan(word)}`;
+        celebrate(feedback);
         button.textContent = "למילה הבאה ←";
         button.dataset.next = "1";
         button.focus();
@@ -260,7 +301,7 @@ function flashGame(board) {
     const lang = langOf(word);
     setScore(`מילה ${index + 1} מתוך ${words.length} · נכונות: ${right}`);
     board.innerHTML = `
-      <div class="flash-play">
+      <div class="flash-play stage">
         <div class="flash-word">${wordSpan(word)}</div>
         <div class="timer"><span></span></div>
         <p class="hint">תסתכלו טוב...</p>
@@ -281,7 +322,7 @@ function flashGame(board) {
       button.addEventListener("click", () => {
         if (button.dataset.next) { index++; next(); return; }
         const ok = normalize(input.value) === normalize(word);
-        if (ok) right++;
+        if (ok) { right++; celebrate(input); }
         setScore(`מילה ${index + 1} מתוך ${words.length} · נכונות: ${right}`);
         document.getElementById("feedback").innerHTML = ok
           ? `<span class="good">נכון! ✓</span>`
@@ -339,6 +380,7 @@ function scrambleGame(board) {
         if (firstTry) right++;
         slots.forEach((s) => s.classList.add("right"));
         feedback.innerHTML = `<span class="good">מעולה! ✓</span>`;
+        celebrate(feedback);
         setTimeout(() => { index++; next(); }, 1100);
       } else {
         firstTry = false;
@@ -390,7 +432,7 @@ function spellingGame(board) {
         c.disabled = true;
         if (round.options[c.dataset.i] === plain(round.word)) c.classList.add("right");
       });
-      if (ok) right++;
+      if (ok) { right++; celebrate(b); }
       else b.classList.add("wrong");
       document.getElementById("feedback").innerHTML = ok ? `<span class="good">נכון! ✓</span>` : `<span class="bad">אופס! הנכונה מסומנת בירוק.</span>`;
       setScore(`מילה ${index + 1} מתוך ${rounds.length} · נכונות: ${right}`);
@@ -434,7 +476,7 @@ function balloonsGame(board) {
       </div>`;
 
     function draw() {
-      document.getElementById("balloons").innerHTML = Array.from({ length: BALLOONS }, (_, i) => `<span class="balloon ${i < left ? "" : "popped"}">${i < left ? "🎈" : "💥"}</span>`).join("");
+      document.getElementById("balloons").innerHTML = Array.from({ length: BALLOONS }, (_, i) => `<span class="balloon ${i < left ? "" : "popped"}">${i < left ? sticker("balloon", "balloon-art") : "✦"}</span>`).join("");
       document.getElementById("word").innerHTML = letters.map((ch, i) => {
         if (!/\p{L}/u.test(ch)) return `<span class="gap"></span>`;
         return `<span class="box">${guessed.has(base(ch)) ? escapeHtml(shown[i]) : ""}</span>`;
@@ -442,7 +484,7 @@ function balloonsGame(board) {
     }
     function done(won) {
       board.querySelectorAll(".key").forEach((k) => (k.disabled = true));
-      if (won) saved++;
+      if (won) { saved++; celebrate(document.getElementById("word"), 24); }
       document.getElementById("feedback").innerHTML = won
         ? `<span class="good">הצלתם את הבלונים! 🎉</span>`
         : `<span class="bad">הבלונים התפוצצו... המילה הייתה:</span> ${wordSpan(word)}`;
@@ -488,9 +530,13 @@ function raceGame(board) {
     let pool = [];
     let word = "";
     let timeLeft = 60;
+    let best = 0;
+    try { best = +localStorage.getItem("alma.raceBest") || 0; } catch (e) { /* ignore */ }
+    const goal = Math.max(best, 10); // reach the trophy = beat your record
     board.innerHTML = `
       <div class="flash-play">
         <div class="race-clock" id="clock">60</div>
+        <div class="race-track"><span class="race-runner" id="runner">${sticker("ball", "race-art")}</span>${sticker("trophy", "race-goal")}</div>
         <div class="flash-word" id="race-word"></div>
         <input class="flash-input" id="race-input" autocomplete="off" spellcheck="false">
         <p class="hint" id="race-count">נכונות: 0</p>
@@ -509,6 +555,8 @@ function raceGame(board) {
       if (normalize(input.value) === normalize(word)) {
         count++;
         document.getElementById("race-count").textContent = `נכונות: ${count}`;
+        document.getElementById("runner").style.setProperty("--p", Math.min(count / goal, 1));
+        if (count === goal) celebrate(document.getElementById("runner"), 20);
         input.classList.add("flash-good");
         setTimeout(() => input.classList.remove("flash-good"), 250);
         nextWord();
@@ -522,8 +570,6 @@ function raceGame(board) {
       document.getElementById("clock").textContent = timeLeft;
       if (timeLeft > 0) return;
       clearInterval(timer);
-      let best = 0;
-      try { best = +localStorage.getItem("alma.raceBest") || 0; } catch (e) { /* ignore */ }
       const record = count > best;
       if (record) { try { localStorage.setItem("alma.raceBest", count); } catch (e) { /* ignore */ } }
       finish(board, `הקלדתם נכון ${count} מילים בדקה! ${record ? "🌟 שיא חדש!" : `השיא שלכם: ${best}`}`, () => raceGame(board));
