@@ -2,6 +2,8 @@
 // picks 10 of them at random (see PATTERN), so each new test gives different pages.
 // The test's seed makes the choice repeatable, so a saved test rebuilds the same pages.
 
+const POOL_VERSION = 2; // raise when adding page types, and mark them with since: <new version>
+
 const PATTERN = ["write", "puzzle", "spell", "write", "puzzle", "think", "spell", "puzzle", "write", "game"];
 
 const PAGE_TYPES = [
@@ -11,6 +13,7 @@ const PAGE_TYPES = [
   { id: "pyramid", cat: "write", title: "מגדלי מילים", instr: () => "בנו מגדל מכל מילה: בשורה הראשונה האות הראשונה, ובכל שורה מוסיפים עוד אות.", body: pyramidSheet },
   { id: "lookCover", cat: "write", title: "מסתכלים, מכסים, כותבים", instr: () => "קראו את המילה, קפלו את הדף או כסו אותה, כתבו אותה מהזיכרון, ואז בדקו. סמנו ✓ אם צדקתם, ונסו שוב בעמודה האחרונה.", body: lookCoverSheet },
   { id: "shapes", cat: "write", title: "מילים במשבצות", instr: () => "האות הראשונה כבר כתובה. מצאו במחסן איזו מילה מתאימה למשבצות, וכתבו אות אחת בכל משבצת.", body: shapesSheet },
+  { id: "dictation", since: 2, cat: "write", title: "הכתבה", instr: () => "למבוגר: גזרו או קפלו את הרצועה שבתחתית הדף, והקריאו את המילים אחת אחרי השנייה. לילד/ה: כתבו כל מילה ששמעתם על קו.", body: dictationSheet },
 
   // Puzzles
   { id: "search", cat: "puzzle", title: (c) => (c.mixed ? "תפזורת - מילים בעברית" : "תפזורת"), instr: (c) => searchInstr(c.search1), body: (c) => searchSheet(c.search1), answers: (c) => searchAnswer(c.search1) },
@@ -18,21 +21,27 @@ const PAGE_TYPES = [
   { id: "scramble", cat: "puzzle", title: "אותיות מבולבלות", instr: () => "האותיות התבלבלו! סדרו אותן וכתבו את המילה על הקו.", body: scrambleSheet, answers: scrambleAnswer },
   { id: "connect", cat: "puzzle", title: "מותחים קו", instr: () => "חברו בקו כל מילה לאותיות המבולבלות שלה.", body: connectSheet },
   { id: "hidden", cat: "puzzle", title: "המילה המתחבאת", instr: () => "בכל שורה מתחבאת מילה מהרשימה בין אותיות אחרות. מצאו אותה והקיפו אותה.", body: hiddenSheet },
+  { id: "crossword", since: 2, cat: "puzzle", title: "תשבץ מילים", instr: () => "שבצו את המילים מהמחסן במשבצות: מילה אחת בכל שורה או טור, לפי מספר המשבצות והאותיות שנפגשות. התחילו מהמילה הארוכה!", body: crosswordSheet, answers: crosswordAnswer },
+  { id: "broken", since: 2, cat: "puzzle", title: "מילים שבורות", instr: () => "כל מילה נשברה לשני חלקים. חברו בקו כל התחלה לסוף שלה, וכתבו את המילה המלאה על הקו.", body: brokenSheet },
   { id: "code", cat: "puzzle", title: "הקוד הסודי", instr: () => "כל מספר הוא אות. היעזרו במפתח, וכתבו את האות מתחת לכל מספר כדי לגלות את המילים.", body: codeSheet },
 
   // Spelling
   { id: "missing", cat: "spell", title: "אותיות שהלכו לאיבוד", instr: () => "השלימו את האותיות החסרות בכל מילה. אפשר להיעזר במחסן המילים.", body: (c) => missingSheet(c, false) },
   { id: "missingHard", cat: "spell", title: "אותיות שהלכו לאיבוד 2", instr: () => "הפעם חסרות יותר אותיות! השלימו כל מילה.", body: (c) => missingSheet(c, true) },
+  { id: "fix", since: 2, cat: "spell", title: "תקנו את הטעות", instr: () => "בכל מילה יש טעות אחת! כתבו את המילה הנכונה על הקו.", body: fixSheet, answers: fixAnswer },
   { id: "spelling", cat: "spell", title: "מי כתוב נכון?", instr: () => "בכל שורה רק מילה אחת כתובה נכון. הקיפו אותה!", body: spellingSheet },
 
   // Thinking
   { id: "order", cat: "think", title: "לפי הסדר", instr: orderInstr, body: orderSheet, answers: orderAnswer },
   { id: "sortLength", cat: "think", title: "קצרות וארוכות", instr: () => "ספרו כמה אותיות יש בכל מילה, וכתבו אותה בעמודה המתאימה.", body: sortLengthSheet },
   { id: "sentence", cat: "think", title: "כל מילה במשפט", instr: () => "כתבו משפט שיש בו את המילה. נסו שכל משפט יהיה שונה.", body: sentenceSheet },
+  { id: "detective", since: 2, cat: "think", title: "בלשי מילים", instr: () => "חקרו כל מילה: מה האות הראשונה שלה, מה האות האחרונה, וכמה אותיות יש בה?", body: detectiveSheet },
   { id: "story", cat: "think", title: "סיפור קטן", instr: () => "כתבו סיפור קצר שיש בו את כל המילים בתיבה. סמנו ✓ ליד כל מילה שהשתמשתם בה.", body: storySheet },
 
   // Games to cut out and play
   { id: "memory", cat: "game", title: "משחק זיכרון לגזירה", instr: () => "גזרו את הקלפים לאורך הקווים, הפכו אותם, ונסו למצוא זוגות של אותה מילה. מי שמוצא זוג - קורא את המילה בקול!", body: memorySheet },
+  { id: "board", since: 2, cat: "game", title: "מירוץ המילים", instr: () => "משחק לוח ל-2 עד 4 שחקנים: צריך קובייה וחפץ קטן לכל שחקן. זורקים, מתקדמים, וקוראים את המילה במשבצת. מצליחים לאיית אותה בלי להסתכל? נשארים. טעיתם? חוזרים משבצת אחת. מי שמגיע ראשון לסיום - מנצח!", body: boardSheet },
+  { id: "tictac", since: 2, cat: "game", title: "איקס עיגול של מילים", instr: () => "משחקים בזוגות. כדי לסמן X או O במשבצת, קוראים את המילה ומאייתים אותה בעל פה - השותף בודק. שלושה בשורה מנצחים!", body: tictacSheet },
   { id: "bingo", cat: "game", title: "בינגו מילים", instr: () => "גזרו את שני הלוחות. מבוגר מקריא מילים מהרשימה בסדר אקראי, וכל שחקן מסמן את המילה אם היא בלוח שלו. שורה מלאה? צועקים בינגו!", body: bingoSheet },
 ];
 
@@ -51,7 +60,9 @@ function buildSheets(test) {
     ctx.search2.puzzle = makeWordSearch(ctx.search2.words, ctx.search2.hard);
 
     const pools = {};
-    for (const type of shuffle(PAGE_TYPES)) (pools[type.cat] = pools[type.cat] || []).push(type);
+    // Tests saved before new page types were added keep using the old pool, so they still rebuild the same pages.
+    const pool = PAGE_TYPES.filter((type) => (type.since || 1) <= (test.version || 1));
+    for (const type of shuffle(pool)) (pools[type.cat] = pools[type.cat] || []).push(type);
     const chosen = PATTERN.map((cat) => pools[cat].pop());
 
     const pages = chosen.map((type) => ({
@@ -94,6 +105,14 @@ function sheetHtml(name, page, n, total) {
 }
 
 // ---------- Writing ----------
+
+function dictationSheet({ words }) {
+  const lines = words.map((w, i) => `<div class="order-line"><span class="num">${i + 1}.</span><span class="write-line"></span></div>`);
+  const list = shuffle(words).map((w, i) => `<span>${i + 1}. ${wordSpan(w)}</span>`);
+  return `
+    <div class="order-blocks two-col">${lines.join("")}</div>
+    <div class="dictation-strip"><div class="cut-line">✂</div><span class="bank-label">למבוגר - להקריא לפי הסדר:</span><div class="dictation-list">${list.join("")}</div></div>`;
+}
 
 function copySheet({ words }) {
   const rows = words.map((w) => `
@@ -178,6 +197,128 @@ function gridTable(puzzle, showAnswers, small) {
   return `<table class="grid" dir="ltr" style="--cell:${cellMm.toFixed(2)}mm">${rows.join("")}</table>`;
 }
 
+// Crossword: words cross each other where they share a letter.
+// x runs in reading direction (right to left for Hebrew), y runs down.
+// Tries many arrangements and keeps the one that fits the most words.
+function makeCrossword(words) {
+  const items = words.map((word) => ({ word, letters: gridLetters(word) })).filter((it) => it.letters.length > 1);
+  if (items.length < 2) return null;
+  const longestFirst = items.slice().sort((a, b) => b.letters.length - a.letters.length);
+  let best = null;
+  for (let attempt = 0; attempt < 40 && (!best || best.placed.length < items.length); attempt++) {
+    const order = attempt === 0 ? longestFirst : [longestFirst[randInt(Math.min(3, items.length))]].concat(shuffle(items));
+    const result = buildCrossword([...new Set(order)]);
+    if (!best || result.placed.length > best.placed.length) best = result;
+  }
+  return best;
+}
+
+function buildCrossword(items) {
+  const cells = new Map(); // "x,y" -> { ch, h, v }
+  const get = (x, y) => cells.get(`${x},${y}`);
+  const placed = [];
+
+  // Returns how many letters the word would share with words already placed, or -1 if it can't go there.
+  const fits = (letters, x, y, horiz) => {
+    const dx = horiz ? 1 : 0, dy = horiz ? 0 : 1;
+    if (get(x - dx, y - dy) || get(x + dx * letters.length, y + dy * letters.length)) return -1;
+    let crossings = 0;
+    for (let i = 0; i < letters.length; i++) {
+      const cx = x + dx * i, cy = y + dy * i;
+      const cell = get(cx, cy);
+      if (cell) {
+        if (cell.ch !== letters[i] || (horiz ? cell.h : cell.v)) return -1;
+        crossings++;
+      } else if (horiz ? get(cx, cy - 1) || get(cx, cy + 1) : get(cx - 1, cy) || get(cx + 1, cy)) {
+        return -1;
+      }
+    }
+    return crossings;
+  };
+  const put = (item, x, y, horiz) => {
+    item.letters.forEach((ch, i) => {
+      const cx = x + (horiz ? i : 0), cy = y + (horiz ? 0 : i);
+      const cell = get(cx, cy) || { ch };
+      cell[horiz ? "h" : "v"] = true;
+      cells.set(`${cx},${cy}`, cell);
+    });
+    placed.push({ word: item.word, x, y, horiz });
+  };
+
+  put(items[0], 0, 0, true);
+  for (const item of items.slice(1)) {
+    const options = [];
+    for (const [key, cell] of cells) {
+      const [cx, cy] = key.split(",").map(Number);
+      item.letters.forEach((ch, i) => {
+        if (ch !== cell.ch) return;
+        for (const horiz of [true, false]) {
+          const x = horiz ? cx - i : cx, y = horiz ? cy : cy - i;
+          if (fits(item.letters, x, y, horiz) > 0) options.push([x, y, horiz]);
+        }
+      });
+    }
+    if (options.length) put(item, ...options[randInt(options.length)]);
+  }
+
+  const xs = [...cells.keys()].map((k) => +k.split(",")[0]);
+  const ys = [...cells.keys()].map((k) => +k.split(",")[1]);
+  const minX = Math.min(...xs), minY = Math.min(...ys);
+  const width = Math.max(...xs) - minX + 1, height = Math.max(...ys) - minY + 1;
+  const grid = Array.from({ length: height }, (_, y) => Array.from({ length: width }, (_, x) => (get(x + minX, y + minY) || {}).ch || ""));
+  // Number the start of each word, top to bottom, in reading order.
+  const starts = [...new Set(placed.map((p) => `${p.x - minX},${p.y - minY}`))]
+    .map((k) => k.split(",").map(Number)).sort((a, b) => a[1] - b[1] || a[0] - b[0]);
+  const numbers = new Map(starts.map(([x, y], i) => [`${x},${y}`, i + 1]));
+  return { grid, width, height, numbers, placed, he: isHebrew(items[0].word) };
+}
+
+function crosswordSheet(ctx) {
+  // A crossword needs one language; mixed lists use the bigger group.
+  ctx.crossword = makeCrossword(ctx.mixed ? (ctx.he.length >= ctx.en.length ? ctx.he : ctx.en) : ctx.words);
+  const cw = ctx.crossword;
+  if (!cw) return `<p class="note">צריך לפחות שתי מילים כדי לבנות תשבץ.</p>`;
+  const bank = `<div class="bank"><span class="bank-label">מחסן מילים:</span>${shuffle(cw.placed).map((p) => wordSpan(p.word, "w bank-word")).join("")}</div>`;
+  return bank + crosswordTable(cw, false, 180, 170);
+}
+
+function crosswordAnswer(ctx) {
+  return ctx.crossword ? crosswordTable(ctx.crossword, true, 84, 84) : "";
+}
+
+function crosswordTable(cw, showAnswers, maxW, maxH) {
+  const cell = Math.min(11, maxW / cw.width, maxH / cw.height);
+  const rows = cw.grid.map((row, y) => `<tr>${row.map((ch, x) => {
+    if (!ch) return '<td class="cw-empty"></td>';
+    const n = cw.numbers.get(`${x},${y}`);
+    return `<td class="cw-cell">${n ? `<span class="cw-num">${n}</span>` : ""}${showAnswers ? escapeHtml(ch) : ""}</td>`;
+  }).join("")}</tr>`);
+  return `<table class="crossword" dir="${cw.he ? "rtl" : "ltr"}" style="--cell:${cell.toFixed(2)}mm">${rows.join("")}</table>`;
+}
+
+function brokenSheet({ words }) {
+  const pick = shuffle(words.filter((w) => gridLetters(w).length >= 3)).slice(0, 10);
+  const parts = pick.map((w) => {
+    const letters = graphemes(plain(w));
+    const at = Math.min(Math.max(Math.ceil(letters.length / 2) - randInt(2), 1), letters.length - 1);
+    return { start: letters.slice(0, at).join(""), end: letters.slice(at).join(""), word: w };
+  });
+  const starts = parts.map((p) => `<div class="connect-item">${halfSpan(p.word, p.start, false)}<span class="dot"></span></div>`);
+  const ends = shuffle(parts).map((p) => `<div class="connect-item"><span class="dot"></span>${halfSpan(p.word, p.end, true)}</div>`);
+  const lines = parts.map((p, i) => `<div class="order-line"><span class="num">${i + 1}.</span><span class="write-line"></span></div>`);
+  return `
+    <div class="connect broken"><div class="connect-col">${starts.join("")}</div><div class="connect-col far">${ends.join("")}</div></div>
+    <div class="order-label">המילים המלאות:</div>
+    <div class="order-blocks two-col">${lines.join("")}</div>`;
+}
+
+// Half a word with "…" on the side where the missing half goes (works for both directions).
+function halfSpan(word, text, dotsFirst) {
+  const lang = langOf(word);
+  const dots = '<span class="dots">…</span>';
+  return `<span class="w half" lang="${lang}" dir="${lang === "he" ? "rtl" : "ltr"}">${dotsFirst ? dots : ""}<span>${escapeHtml(text)}</span>${dotsFirst ? "" : dots}</span>`;
+}
+
 // Letters of a word in a new order (different from the word itself when possible).
 function scrambled(word) {
   const letters = gridLetters(word);
@@ -258,6 +399,16 @@ function missingSheet({ words }, hard) {
   return (hard ? "" : wordBank(words)) + `<div class="rows two-col" style="${fitBox(words)}">${rows.join("")}</div>`;
 }
 
+function fixSheet(ctx) {
+  ctx.fixOrder = shuffle(ctx.words).map((w) => ({ word: w, wrong: misspellings(w, 1)[0] })).filter((p) => p.wrong);
+  const rows = ctx.fixOrder.map((p, n) => `<div class="fix-row"><span class="num">${n + 1}.</span><span class="fix-wrong">${wordSpan(p.wrong)}</span><span class="write-line"></span></div>`);
+  return `<div class="rows two-col">${rows.join("")}</div>`;
+}
+
+function fixAnswer(ctx) {
+  return `<ol class="answer-order">${ctx.fixOrder.map((p) => `<li>${wordSpan(p.word)}</li>`).join("")}</ol>`;
+}
+
 function spellingSheet({ words }) {
   const rows = shuffle(words).map((w, n) => {
     const options = shuffle([plain(w)].concat(misspellings(w, 2)));
@@ -308,6 +459,15 @@ function sentenceSheet({ words }) {
   return `<div class="rows ${words.length > 14 ? "dense" : ""}">${rows.join("")}</div>`;
 }
 
+function detectiveSheet({ words }) {
+  const rows = shuffle(words).map((w) => `<tr><td class="lc-word">${wordSpan(w)}</td><td></td><td></td><td></td><td></td></tr>`);
+  return `
+    <table class="lc ${words.length > 14 ? "dense" : ""}">
+      <thead><tr><th>המילה</th><th>🔎 אות ראשונה</th><th>🔎 אות אחרונה</th><th>כמה אותיות?</th><th>✍️ כתבו שוב</th></tr></thead>
+      <tbody>${rows.join("")}</tbody>
+    </table>`;
+}
+
 function storySheet({ words }) {
   const pick = shuffle(words).slice(0, 5);
   return `
@@ -322,6 +482,38 @@ function memorySheet({ words }) {
   const cards = shuffle(words.concat(words));
   const cols = cards.length > 30 ? 5 : 4;
   return `<div class="cards" style="--cols:${cols}">${cards.map((w) => `<div class="card">${wordSpan(w)}</div>`).join("")}</div>`;
+}
+
+function boardSheet({ words }) {
+  const cols = 6, rows = 6;
+  const total = cols * rows;
+  const specials = { 6: "⭐ קדימה 2", 13: "↩ חזרה 1", 19: "⭐ קדימה 3", 26: "↩ חזרה 2", 31: "🎁 עוד תור" };
+  let pool = [];
+  const squares = Array.from({ length: total }, (_, i) => {
+    if (i === 0) return "<b>התחלה</b>";
+    if (i === total - 1) return "<b>★ סיום ★</b>";
+    if (specials[i]) return `<span class="board-special">${specials[i]}</span>`;
+    if (!pool.length) pool = shuffle(words);
+    return wordSpan(pool.pop());
+  });
+  // A snake path from the bottom up: every second row runs the other way.
+  const cells = [];
+  for (let r = rows - 1; r >= 0; r--) {
+    for (let c = 0; c < cols; c++) {
+      const i = r * cols + (r % 2 === 0 ? c : cols - 1 - c);
+      cells.push(`<div class="board-cell ${i % 2 ? "alt" : ""}"><span class="board-num">${i + 1}</span>${squares[i]}</div>`);
+    }
+  }
+  return `<div class="board">${cells.join("")}</div>`;
+}
+
+function tictacSheet({ words }) {
+  const board = (k) => `
+    <div class="bingo">
+      <div class="bingo-title">✕ ◯ <small>לוח ${k}</small></div>
+      <div class="bingo-grid" style="--n:3">${shuffle(words).slice(0, 9).map((w) => `<div class="bingo-cell">${wordSpan(w)}</div>`).join("")}</div>
+    </div>`;
+  return `<div class="bingos">${board(1)}<div class="cut-line">✂</div>${board(2)}</div>`;
 }
 
 function bingoSheet({ words }) {

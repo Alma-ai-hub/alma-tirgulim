@@ -58,7 +58,7 @@ function create() {
   els.error.textContent = "";
   if (!els.name.value.trim()) els.name.value = defaultName();
   saveDraft();
-  show({ name: els.name.value.trim(), words, seed: newSeed(), withAnswers: els.answers.checked });
+  show({ name: els.name.value.trim(), words, seed: newSeed(), withAnswers: els.answers.checked, version: POOL_VERSION });
   els.results.scrollIntoView({ behavior: "smooth" });
 }
 
@@ -74,7 +74,7 @@ function show(test) {
 }
 
 function remake() {
-  show({ ...current, seed: newSeed() });
+  show({ ...current, seed: newSeed(), version: POOL_VERSION });
 }
 
 function updateSaveButton() {
@@ -156,7 +156,7 @@ function openTest(id) {
   els.answers.checked = test.withAnswers;
   updateCount();
   showView("create");
-  show({ name: test.name, words: test.words, seed: test.seed, withAnswers: test.withAnswers });
+  show({ name: test.name, words: test.words, seed: test.seed, withAnswers: test.withAnswers, version: test.version || 1 });
   els.results.scrollIntoView({ behavior: "smooth" });
 }
 

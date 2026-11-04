@@ -5,6 +5,10 @@ const GAMES = [
   { id: "search", icon: "🔍", title: "תפזורת", text: "לחצו על האות הראשונה ועל האחרונה של כל מילה." },
   { id: "missing", icon: "🧩", title: "אותיות חסרות", text: "השלימו את האותיות שהלכו לאיבוד." },
   { id: "flash", icon: "⚡", title: "תראו ותכתבו", text: "המילה מופיעה לרגע ונעלמת. כתבו אותה מהזיכרון!" },
+  { id: "scramble", icon: "🔀", title: "אותיות מבולבלות", text: "לחצו על האותיות לפי הסדר כדי לבנות את המילה." },
+  { id: "spelling", icon: "✅", title: "מי כתוב נכון?", text: "שלוש מילים, רק אחת כתובה נכון. מצאו אותה!" },
+  { id: "balloons", icon: "🎈", title: "הצילו את הבלונים", text: "נחשו את המילה אות אחרי אות, לפני שכל הבלונים מתפוצצים." },
+  { id: "race", icon: "⏱️", title: "מירוץ הקלדה", text: "כמה מילים תספיקו להקליד נכון בדקה אחת?" },
 ];
 
 let gameWords = [];
@@ -33,7 +37,7 @@ function startGame(id) {
     <div id="game-board"></div>`;
   document.getElementById("game-back").addEventListener("click", () => showGameMenu(gameWords));
   const board = document.getElementById("game-board");
-  ({ memory: memoryGame, search: searchGame, missing: missingGame, flash: flashGame })[id](board);
+  ({ memory: memoryGame, search: searchGame, missing: missingGame, flash: flashGame, scramble: scrambleGame, spelling: spellingGame, balloons: balloonsGame, race: raceGame })[id](board);
 }
 
 function setScore(text) {
@@ -290,4 +294,239 @@ function flashGame(board) {
     }, 3000);
   }
   next();
+}
+
+// --- Scrambled letters --------------------------------------------------
+
+function scrambleGame(board) {
+  const words = shuffle(gameWords.filter((w) => gridLetters(w).length > 1));
+  let index = 0;
+  let right = 0;
+
+  function next() {
+    if (index >= words.length) {
+      finish(board, `סיימתם! ${right} מתוך ${words.length} מילים בניסיון הראשון.`, () => scrambleGame(board));
+      return;
+    }
+    const word = words[index];
+    const letters = gridLetters(word);
+    const lang = langOf(word);
+    const dir = lang === "he" ? "rtl" : "ltr";
+    let mixed = letters;
+    for (let t = 0; t < 10 && mixed.join("") === letters.join(""); t++) mixed = shuffle(letters);
+    const picked = []; // indexes into mixed, in the order the player chose them
+    let firstTry = true;
+    setScore(`מילה ${index + 1} מתוך ${words.length}`);
+
+    board.innerHTML = `
+      <div class="missing-play">
+        <div class="boxes big slots" dir="${dir}">${letters.map((_, i) => `<button class="box slot" data-slot="${i}" aria-label="משבצת ${i + 1}"></button>`).join("")}</div>
+        <div class="letter-tiles" dir="${dir}">${mixed.map((ch, i) => `<button class="letter-tile" data-i="${i}">${escapeHtml(ch)}</button>`).join("")}</div>
+        <div class="feedback" id="feedback"></div>
+        <button class="btn ghost" id="clear">לנקות ולהתחיל שוב</button>
+      </div>`;
+    const tilesEls = [...board.querySelectorAll(".letter-tile")];
+    const slots = [...board.querySelectorAll(".slot")];
+
+    function draw() {
+      slots.forEach((slot, i) => (slot.textContent = picked[i] === undefined ? "" : mixed[picked[i]]));
+      tilesEls.forEach((t) => (t.disabled = picked.includes(+t.dataset.i)));
+    }
+    function check() {
+      const answer = picked.map((i) => mixed[i]).join("");
+      const feedback = document.getElementById("feedback");
+      if (answer === letters.join("")) {
+        if (firstTry) right++;
+        slots.forEach((s) => s.classList.add("right"));
+        feedback.innerHTML = `<span class="good">מעולה! ✓</span>`;
+        setTimeout(() => { index++; next(); }, 1100);
+      } else {
+        firstTry = false;
+        feedback.innerHTML = `<span class="bad">לא בדיוק... נסו שוב!</span>`;
+        board.querySelector(".slots").classList.add("shake");
+        setTimeout(() => { picked.length = 0; draw(); board.querySelector(".slots").classList.remove("shake"); }, 700);
+      }
+    }
+    tilesEls.forEach((t) => t.addEventListener("click", () => {
+      picked.push(+t.dataset.i);
+      draw();
+      if (picked.length === letters.length) check();
+    }));
+    slots.forEach((slot, i) => slot.addEventListener("click", () => { // take a letter back
+      if (picked[i] === undefined || picked.length === letters.length) return;
+      picked.splice(i, 1);
+      draw();
+    }));
+    document.getElementById("clear").addEventListener("click", () => { picked.length = 0; draw(); });
+  }
+  next();
+}
+
+// --- Which spelling is right ----------------------------------------------
+
+function spellingGame(board) {
+  const rounds = shuffle(gameWords)
+    .map((w) => ({ word: w, options: shuffle([plain(w)].concat(misspellings(w, 2))) }))
+    .filter((r) => r.options.length > 1);
+  let index = 0;
+  let right = 0;
+
+  function next() {
+    if (index >= rounds.length) {
+      finish(board, `סיימתם! בחרתם נכון ${right} מתוך ${rounds.length} פעמים.`, () => spellingGame(board));
+      return;
+    }
+    const round = rounds[index];
+    setScore(`מילה ${index + 1} מתוך ${rounds.length} · נכונות: ${right}`);
+    board.innerHTML = `
+      <div class="missing-play">
+        <p class="hint">איזו מילה כתובה נכון?</p>
+        <div class="choices">${round.options.map((o, i) => `<button class="choice" data-i="${i}">${wordSpan(o)}</button>`).join("")}</div>
+        <div class="feedback" id="feedback"></div>
+      </div>`;
+    board.querySelectorAll(".choice").forEach((b) => b.addEventListener("click", () => {
+      const ok = round.options[b.dataset.i] === plain(round.word);
+      board.querySelectorAll(".choice").forEach((c) => {
+        c.disabled = true;
+        if (round.options[c.dataset.i] === plain(round.word)) c.classList.add("right");
+      });
+      if (ok) right++;
+      else b.classList.add("wrong");
+      document.getElementById("feedback").innerHTML = ok ? `<span class="good">נכון! ✓</span>` : `<span class="bad">אופס! הנכונה מסומנת בירוק.</span>`;
+      setScore(`מילה ${index + 1} מתוך ${rounds.length} · נכונות: ${right}`);
+      setTimeout(() => { index++; next(); }, ok ? 900 : 1800);
+    }));
+  }
+  next();
+}
+
+// --- Balloons (guess the letters) -----------------------------------------
+
+const HEB_KEYS = "אבגדהוזחטיכלמנסעפצקרשת";
+const ENG_KEYS = "abcdefghijklmnopqrstuvwxyz";
+const BALLOONS = 6;
+
+function balloonsGame(board) {
+  const words = shuffle(gameWords.filter((w) => gridLetters(w).length > 1));
+  let index = 0;
+  let saved = 0;
+
+  function next() {
+    if (index >= words.length) {
+      finish(board, `סיימתם! ניחשתם ${saved} מתוך ${words.length} מילים.`, () => balloonsGame(board));
+      return;
+    }
+    const word = words[index];
+    const he = isHebrew(word);
+    const shown = graphemes(plain(word)); // as written, e.g. with capitals
+    const letters = shown.map((ch) => (he ? ch : ch.toLowerCase()));
+    const base = (ch) => (he ? UNFINAL[ch] || ch : ch); // ם counts as מ
+    const guessed = new Set();
+    let left = BALLOONS;
+    setScore(`מילה ${index + 1} מתוך ${words.length} · הצלחות: ${saved}`);
+
+    board.innerHTML = `
+      <div class="missing-play">
+        <div class="balloons" id="balloons"></div>
+        <div class="boxes big" dir="${he ? "rtl" : "ltr"}" id="word"></div>
+        <div class="keyboard" dir="${he ? "rtl" : "ltr"}">${Array.from(he ? HEB_KEYS : ENG_KEYS).map((k) => `<button class="key" data-k="${k}">${k}</button>`).join("")}</div>
+        <div class="feedback" id="feedback"></div>
+      </div>`;
+
+    function draw() {
+      document.getElementById("balloons").innerHTML = Array.from({ length: BALLOONS }, (_, i) => `<span class="balloon ${i < left ? "" : "popped"}">${i < left ? "🎈" : "💥"}</span>`).join("");
+      document.getElementById("word").innerHTML = letters.map((ch, i) => {
+        if (!/\p{L}/u.test(ch)) return `<span class="gap"></span>`;
+        return `<span class="box">${guessed.has(base(ch)) ? escapeHtml(shown[i]) : ""}</span>`;
+      }).join("");
+    }
+    function done(won) {
+      board.querySelectorAll(".key").forEach((k) => (k.disabled = true));
+      if (won) saved++;
+      document.getElementById("feedback").innerHTML = won
+        ? `<span class="good">הצלתם את הבלונים! 🎉</span>`
+        : `<span class="bad">הבלונים התפוצצו... המילה הייתה:</span> ${wordSpan(word)}`;
+      letters.forEach((ch) => guessed.add(base(ch)));
+      draw();
+      setScore(`מילה ${index + 1} מתוך ${words.length} · הצלחות: ${saved}`);
+      const more = document.createElement("button");
+      more.className = "btn primary";
+      more.textContent = "למילה הבאה ←";
+      more.addEventListener("click", () => { index++; next(); });
+      board.querySelector(".missing-play").appendChild(more);
+      more.focus();
+    }
+    board.querySelectorAll(".key").forEach((key) => key.addEventListener("click", () => {
+      const k = key.dataset.k;
+      key.disabled = true;
+      guessed.add(k);
+      if (letters.some((ch) => base(ch) === k)) key.classList.add("hit");
+      else { key.classList.add("miss"); left--; }
+      draw();
+      const complete = letters.every((ch) => !/\p{L}/u.test(ch) || guessed.has(base(ch)));
+      if (complete) done(true);
+      else if (left === 0) done(false);
+    }));
+    draw();
+  }
+  next();
+}
+
+// --- Typing race ------------------------------------------------------------
+
+function raceGame(board) {
+  setScore("");
+  board.innerHTML = `
+    <div class="flash-play">
+      <p class="hint">יש לכם דקה אחת. כל מילה שמופיעה - מקלידים מהר ובלי טעויות!</p>
+      <button class="btn primary big-start" id="go">מתחילים! ⏱️</button>
+    </div>`;
+  document.getElementById("go").addEventListener("click", () => run());
+
+  function run() {
+    let count = 0;
+    let pool = [];
+    let word = "";
+    let timeLeft = 60;
+    board.innerHTML = `
+      <div class="flash-play">
+        <div class="race-clock" id="clock">60</div>
+        <div class="flash-word" id="race-word"></div>
+        <input class="flash-input" id="race-input" autocomplete="off" spellcheck="false">
+        <p class="hint" id="race-count">נכונות: 0</p>
+      </div>`;
+    const input = document.getElementById("race-input");
+    const nextWord = () => {
+      if (!pool.length) pool = shuffle(gameWords);
+      word = pool.pop();
+      const lang = langOf(word);
+      document.getElementById("race-word").innerHTML = wordSpan(word);
+      input.lang = lang;
+      input.dir = lang === "he" ? "rtl" : "ltr";
+      input.value = "";
+    };
+    input.addEventListener("input", () => {
+      if (normalize(input.value) === normalize(word)) {
+        count++;
+        document.getElementById("race-count").textContent = `נכונות: ${count}`;
+        input.classList.add("flash-good");
+        setTimeout(() => input.classList.remove("flash-good"), 250);
+        nextWord();
+      }
+    });
+    nextWord();
+    input.focus();
+    const timer = setInterval(() => {
+      if (!board.isConnected) { clearInterval(timer); return; }
+      timeLeft--;
+      document.getElementById("clock").textContent = timeLeft;
+      if (timeLeft > 0) return;
+      clearInterval(timer);
+      let best = 0;
+      try { best = +localStorage.getItem("alma.raceBest") || 0; } catch (e) { /* ignore */ }
+      const record = count > best;
+      if (record) { try { localStorage.setItem("alma.raceBest", count); } catch (e) { /* ignore */ } }
+      finish(board, `הקלדתם נכון ${count} מילים בדקה! ${record ? "🌟 שיא חדש!" : `השיא שלכם: ${best}`}`, () => raceGame(board));
+    }, 1000);
+  }
 }
