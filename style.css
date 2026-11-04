@@ -433,6 +433,94 @@ textarea { resize: vertical; }
 .board-special { color: var(--paper-pink); font-weight: 700; font-size: 3.8mm; }
 .board-sticker { width: 9mm; height: 9mm; }
 
+/* Concert tickets */
+.tickets { display: grid; grid-template-columns: repeat(3, 1fr); grid-auto-rows: minmax(0, 27mm); gap: 3mm; align-content: start; }
+.tickets.dense { grid-auto-rows: minmax(0, 24mm); }
+.ticket { display: flex; border: 0.45mm solid var(--paper-ink); border-radius: 3mm; overflow: hidden; min-width: 0; }
+.ticket-stub { width: 11mm; flex: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.5mm; background: var(--paper-ink); color: var(--paper-soft); font-family: "Fredoka", sans-serif; font-size: 2.8mm; font-weight: 700; letter-spacing: .1em; border-inline-end: 0.5mm dashed var(--paper-pink); }
+.ticket-art { width: 7mm; height: 7mm; }
+.ticket-main { flex: 1; min-width: 0; display: flex; flex-direction: column; padding: 1mm 2.5mm 1.5mm; }
+.ticket-word { font-size: 5mm; font-weight: 600; color: var(--paper-pink); white-space: nowrap; overflow: hidden; }
+.ticket-main .write-line { min-height: 0; flex: 1; }
+
+/* Big, medium, small */
+.sizes-row .write-line.big { flex: 1.4; max-height: 14mm; }
+.sizes-row .write-line.mid { flex: 1; max-height: 10mm; }
+.sizes-row .write-line.small { flex: .7; max-height: 6.5mm; min-height: 5mm; }
+
+/* Spelling maze */
+.maze { flex: 1; display: grid; grid-template-columns: repeat(5, 1fr); grid-auto-rows: 1fr; gap: 2mm; max-height: 205mm; }
+.maze-cell { position: relative; display: grid; place-items: center; text-align: center; border: 0.45mm solid var(--paper-ink); border-radius: 4mm; font-size: 5mm; padding: 1mm; }
+.maze-cell:nth-child(odd) { background: #fff8fc; }
+.maze-tag { position: absolute; top: -2.6mm; inset-inline-start: 2mm; background: var(--paper-pink); color: #fff; font-size: 3mm; font-weight: 700; padding: 0 2mm; border-radius: 99px; }
+.maze-trophy { position: absolute; top: -4mm; inset-inline-end: 0; width: 10mm; height: 10mm; }
+.maze.small { grid-template-columns: repeat(5, 16mm); grid-auto-rows: 9mm; gap: 1mm; max-height: none; }
+.maze.small .maze-cell { font-size: 2.8mm; border-radius: 2mm; border-width: 0.25mm; }
+.maze.small .maze-tag, .maze.small .maze-trophy { display: none; }
+.maze-cell.hit { background: #ffb3d6; }
+
+/* Letter hunt */
+.hunt-top { display: flex; align-items: center; justify-content: center; gap: 4mm; font-weight: 700; font-size: 5mm; margin-bottom: 4mm; }
+.hunt-badge { position: relative; display: inline-grid; place-items: center; width: 18mm; height: 18mm; }
+.hunt-art { position: absolute; inset: 0; width: 100%; height: 100%; }
+.hunt-badge b { position: relative; font-size: 7mm; color: #fff; margin-top: 1mm; text-shadow: 0 0 1mm var(--paper-ink); }
+.hunt-row { display: flex; align-items: center; justify-content: space-between; gap: 3mm; }
+.hunt-word { display: inline-flex; gap: 1.6mm; font-size: 6mm; font-weight: 600; unicode-bidi: isolate; }
+.hunt-count { color: #888; font-size: 4.4mm; white-space: nowrap; }
+
+/* True or false */
+.lc.tf .check { width: 14mm; color: #bbb; font-size: 5mm; }
+.lc.tf.dense td { height: 9.6mm; }
+
+/* Draw the word */
+.draw-grid { flex: 1; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(3, 1fr); gap: 5mm; max-height: 215mm; }
+.draw-box { position: relative; display: flex; flex-direction: column; gap: 1.5mm; border: 0.45mm solid var(--paper-ink); border-radius: 5mm; padding: 3mm; min-height: 0; }
+.draw-corner { position: absolute; top: -3mm; inset-inline-end: 1mm; width: 11mm; height: 11mm; }
+.draw-area { flex: 1; border-radius: 3mm; background: repeating-linear-gradient(45deg, transparent 0 4mm, #fff4fa 4mm 8mm); }
+.draw-word { font-size: 5.2mm; color: var(--paper-pink); }
+.draw-box .write-line { flex: none; min-height: 0; height: 8mm; }
+
+/* Comic */
+.comic { flex: 1; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 4mm; max-height: 190mm; }
+.comic-panel { position: relative; border: 0.6mm solid var(--paper-ink); border-radius: 2mm; padding: 3mm; display: flex; flex-direction: column; }
+.comic-num { position: absolute; top: 1.5mm; inset-inline-end: 2mm; width: 6mm; height: 6mm; display: grid; place-items: center; border-radius: 50%; background: var(--paper-ink); color: #fff; font-size: 3.4mm; font-weight: 700; }
+.comic-bubble { position: relative; width: 78%; padding: 1mm 4mm 3mm; border: 0.45mm solid var(--paper-ink); border-radius: 50% / 40%; background: #fff; }
+.comic-bubble::after { content: ""; position: absolute; bottom: -3.4mm; inset-inline-start: 30%; border: 2mm solid transparent; border-top: 3.4mm solid var(--paper-ink); }
+.comic-bubble .write-line { min-height: 0; height: 7mm; flex: none; }
+
+/* What's easy for me */
+.rate-art { width: 6mm; height: 6mm; vertical-align: middle; }
+.rate-bottom { margin-top: auto; padding-top: 4mm; border-top: 0.4mm dashed var(--paper-pink); }
+.rate-bottom .bank-label { white-space: nowrap; padding-bottom: 1mm; }
+
+/* Challenge dice */
+.dice-tasks { display: grid; grid-template-columns: 1fr 1fr; gap: 2.5mm; margin-bottom: 5mm; }
+.dice-task { display: flex; align-items: center; gap: 3mm; padding: 2mm 3mm; border-radius: 3mm; background: #fff4fa; border: 0.35mm solid var(--paper-pink); font-size: 4.2mm; }
+.dice-face { font-size: 10mm; line-height: 1; color: var(--paper-ink); }
+.dice-words { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2.5mm 5mm; align-content: start; }
+.dice-word { display: flex; justify-content: space-between; align-items: center; gap: 2mm; padding-bottom: 1mm; border-bottom: 0.3mm dotted #bbb; font-size: 4.8mm; min-width: 0; }
+.hearts { display: inline-flex; gap: 0.8mm; }
+.hearts .tick { width: 4mm; height: 4mm; }
+
+/* Penalties */
+.lc.penalties .goal { text-align: center; width: 45mm; }
+.goal-ball { width: 6.5mm; height: 6.5mm; opacity: .35; vertical-align: middle; }
+.lc.penalties.dense td { height: 8.6mm; }
+.lc.penalties.dense .goal-ball { width: 5.5mm; height: 5.5mm; }
+.lc.penalties th .blank.short { width: 16mm; }
+.score-line { display: flex; align-items: center; justify-content: center; gap: 3mm; margin-top: 2.5mm; font-weight: 700; font-size: 6mm; }
+.score-art { width: 12mm; height: 12mm; }
+.score-box { display: inline-block; width: 14mm; height: 12mm; border: 0.5mm solid var(--paper-ink); border-radius: 2mm; }
+
+/* Jigsaw */
+.jigsaw { display: grid; grid-template-columns: repeat(5, 1fr); grid-auto-rows: 22mm; align-content: start; }
+.piece { position: relative; display: grid; place-items: center; border: 0.35mm dashed #b9a9b2; font-size: 6.5mm; font-weight: 600; }
+.piece::before, .piece::after { content: ""; position: absolute; width: 4.5mm; height: 4.5mm; border-radius: 50%; border: 0.35mm solid var(--paper-pink); background: #fff; top: 50%; transform: translateY(-50%); }
+.piece::before { left: 1.2mm; }
+.piece::after { right: 1.2mm; }
+/* The notch shows only on the side where the next part of the word joins */
+.piece.en.first::before, .piece.en.last::after, .piece.he.first::after, .piece.he.last::before { display: none; }
+
 .answers { display: flex; flex-wrap: wrap; gap: 6mm 10mm; align-items: flex-start; }
 .answer-block .grid { margin: 0; }
 .answer-order { margin: 0; padding-inline-start: 7mm; columns: 2; column-gap: 8mm; font-size: 4mm; }
